@@ -5,6 +5,7 @@ from werkzeug.exceptions import default_exceptions, HTTPException, InternalServe
 from werkzeug.security import generate_password_hash, check_password_hash
 from tempfile import mkdtemp
 from database import db, User
+from helpers import login_required
 
 # Creating and configuring flask app
 app = Flask(__name__)
@@ -36,6 +37,7 @@ def after_request(response):
 
 # App routes
 @app.route("/", methods=["GET", "POST"])
+@login_required
 def index():
     if request.method == "GET":
         return render_template("index.html")
