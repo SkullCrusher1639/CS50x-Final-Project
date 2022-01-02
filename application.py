@@ -4,7 +4,7 @@ from flask_session import Session
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import generate_password_hash, check_password_hash
 from tempfile import mkdtemp
-from database import db
+from database import db, User
 
 # Creating and configuring flask app
 app = Flask(__name__)
@@ -17,6 +17,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///inventory.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.app = app
 db.init_app(app)
+db.create_all()
 
 # Configuring session/cookies settings
 app.config["SESSION_FILE_DIR"] = mkdtemp()
@@ -37,7 +38,7 @@ def after_request(response):
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "GET":
-        return render_template("index.html", session=None)
+        return render_template("index.html")
     else:
         return redirect("/")
 
@@ -53,10 +54,10 @@ def register():
         if not user_name:
             error = True
             return render_template("register.html", error=error)
-        #count = db.execute('SELECT username FROM users WHERE username = ?', user_name)
-        #if len(count) != 0:
-         #   error = True
-          #  return render_template("register.html", error=error)
+        present_user = User.query.filter_by(username = user_name).first()
+        if present_user != None:
+            error = True
+            return render_template("register.html", error=error)
 
         # Checking password
         password = request.form.get("password")
@@ -72,7 +73,9 @@ def register():
             return render_template("register.html", error=error)
         password_hash = generate_password_hash(password)
         #Store in database
-        #db.execute("INSERT INTO users(username, hash) VALUES(?, ?)", user_name, password_hash)
+        new_user = User(username = user_name, hash = password_hash)
+        db.session.add(new_user)
+        db.session.commit()
         return redirect("/login")
 
 @app.route("/login", methods=["GET", "POST"])
@@ -83,24 +86,30 @@ def login():
     session.clear()
 
     if request.method == "POST":
-        if not request.form.get("username"):
+        user_name = request.form.get("username")
+        if not user_name:
             error = True
             return render_template("login.html", error=error)
-        elif not request.form.get("password"):
+        password = request.form.get("password")
+        if not password:
             error = True
             return render_template("login.html", error=error)
         #rows = db.execute("SELECT * FROM users WHERE username = ?", request.form.get("username"))
-        #if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
-        #    error = True
-        #    return render_template("login.html", error=error)
-
-        #session["user_id"] = rows[0]["id"]
+        rows = User.query.filter_by(username = user_name).first()
+        if len == None or not check_password_hash(rows.hash, password):
+            error = True
+            return render_template("login.html", error=error)
+        session["user_id"] = rows.id
         return redirect("/")
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
         return render_template("login.html", error=error)
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
 
 # Error and exception handling
 def errorhandler(e):

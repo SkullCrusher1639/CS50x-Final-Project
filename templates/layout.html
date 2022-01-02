@@ -35,7 +35,7 @@
 					<div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-white min-vh-100">
 						<p><span class="fs-5 d-none d-sm-inline logo">Menu</span></p>
 						<ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start" id="menu">
-							{% if not session %}
+							{% if not session.user_id %}
 							<li class="nav-item">
 								<div class="menu_link">
 								<a href="/login" class="nav-link align-middle px-0">
@@ -89,7 +89,7 @@
 							</li>
 						</ul>
 						<div id="log_out" class="menu_link">
-							<a href="#" data-bs-toggle="collapse" class="nav-link px-0 align-middle">
+							<a href="/logout" data-bs-toggle="collapse" class="nav-link px-0 align-middle">
 								<i class="bi bi-person-x-fill"></i> <span class="ms-1 d-none d-sm-inline">Log out</span></a>
 						</div>
 						{% endif %}
