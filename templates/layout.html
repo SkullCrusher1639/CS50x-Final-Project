@@ -35,7 +35,7 @@
 					<div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 text-white min-vh-100">
 						<p><span class="fs-5 d-none d-sm-inline logo">Menu</span></p>
 						<ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start" id="menu">
-							{% if session %}
+							{% if not session %}
 							<li class="nav-item">
 								<div class="menu_link">
 								<a href="/" class="nav-link align-middle px-0">
@@ -94,7 +94,7 @@
 						</div>
 						{% endif %}
 						<div id='developer' data-bs-toggle="collapse">
-							<p class="ms-1 d-none d-sm-inline">Developed by Hammad Bin Sajjad</p>
+							<p class="ms-1 d-none d-sm-inline">Developed by<br>Hammad Bin Sajjad</p>
 						</div>
 						
 					</div>
