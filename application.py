@@ -36,6 +36,7 @@ def after_request(response):
 
 
 # App routes
+# Main Dashboard
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
@@ -44,7 +45,7 @@ def index():
     else:
         return redirect("/")
 
-
+# Register new user/manager
 @app.route("/register", methods=["GET", "POST"])
 def register():
     error = None
@@ -74,12 +75,14 @@ def register():
             error = True
             return render_template("register.html", error=error)
         password_hash = generate_password_hash(password)
-        #Store in database
+        # Store in database
         new_user = User(username = user_name, hash = password_hash)
         db.session.add(new_user)
         db.session.commit()
         return redirect("/login")
 
+
+# Logging in a registered user
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
@@ -96,18 +99,17 @@ def login():
         if not password:
             error = True
             return render_template("login.html", error=error)
-        #rows = db.execute("SELECT * FROM users WHERE username = ?", request.form.get("username"))
         rows = User.query.filter_by(username = user_name).first()
-        if len == None or not check_password_hash(rows.hash, password):
+        if rows == None or not check_password_hash(rows.hash, password):
             error = True
             return render_template("login.html", error=error)
         session["user_id"] = rows.id
         return redirect("/")
-
-    # User reached route via GET (as by clicking a link or via redirect)
     else:
         return render_template("login.html", error=error)
 
+
+# Logout a user and clear its session
 @app.route("/logout")
 def logout():
     session.clear()

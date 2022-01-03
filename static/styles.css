@@ -60,12 +60,8 @@
 
 .form-control
 {
-    width: 50%;
-}
-
-.form-group
-{
-    text-align: center;
+    display: inline;
+    width: auto;
 }
 
 .error
