@@ -13,8 +13,8 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Confirguring Database setting
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///inventory.db'
-# For Linux below statement will work
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///inventory.db'
+# For Linux, below statement will work
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////inventory.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.app = app
 db.init_app(app)
