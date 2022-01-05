@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import date
+from sqlalchemy.ext.declarative import AbstractConcreteBase
 db=SQLAlchemy()
 
 # User Table for BookShop Managers
@@ -43,24 +44,31 @@ class Sub_Category(db.Model):
     sub_category = db.Column(db.Integer, nullable = False)
     add_products = db.relationship("Add_Product", backref="sub_category")
 
-# Class for the Product Add Table
-class Add_Product(db.Model):
-    __tablename__ = "added_products"
+
+
+# Parent class for Invenrtory and product Logs
+class Product(AbstractConcreteBase, db.Model):
+    __abstract__ = True
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.Text, nullable = False)
     quantity = db.Column(db.Integer, nullable = False)
-    cost = db.Column(db.Integer, nullable = False)
-    sale = db.Column(db.Integer, nullable = False, default=0)
+    price = db.Column(db.Integer, nullable = False)
     date = db.Column(db.Date, nullable = False, default=date.today())
+
+
+# Child Class for the Product Add Table
+class Add_Product(Product):
+    __tablename__ = "added_products"  
+    sub_category_id = db.Column(db.Integer,db.ForeignKey("sub_categories.id"))
+    
+    
+# Child Class for the Products sold Table
+class Sale_Product(Product):
+    __tablename__ = "sold_products"
     sub_category_id = db.Column(db.Integer,db.ForeignKey("sub_categories.id"))
 
-# Class for the Products sold Table
-class Sale_Product(db.Model):
-    __tablename__ = "sold_products"
-    id = db.Column(db.Integer, primary_key = True)
-    name = db.Column(db.Text, nullable = False)
-    quantity = db.Column(db.Integer, nullable = False)
-    cost = db.Column(db.Integer, nullable = False, default = 0)
-    sale = db.Column(db.Integer, nullable = False)
-    date = db.Column(db.Date, nullable = False, default=date.today())
+# Child Class for the Inventory
+class Inventory(Product):
+    __tablename__ = "inventory"
+    old = db.Column(db.Boolean, default=False, nullable = False)
     sub_category_id = db.Column(db.Integer,db.ForeignKey("sub_categories.id"))
