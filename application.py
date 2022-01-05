@@ -4,7 +4,9 @@ from flask_session import Session
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import generate_password_hash, check_password_hash
 from tempfile import mkdtemp
-from database import db, User
+from sqlalchemy.orm import load_only
+from database import db, User, Type, Category, Sub_Category, Add_Product, Sale_Product, Inventory
+from sqlalchemy import text
 from helpers import login_required
 
 # Creating and configuring flask app
@@ -36,7 +38,7 @@ def after_request(response):
 
 
 # App routes
-# Main Dashboard
+# Main Dashboard with the current inventory
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
@@ -55,24 +57,24 @@ def register():
         # Checking username
         user_name = request.form.get("username")
         if not user_name:
-            error = True
+            error = "Username cannot be empty"
             return render_template("register.html", error=error)
         present_user = User.query.filter_by(username = user_name).first()
         if present_user != None:
-            error = True
+            error = "Username not found"
             return render_template("register.html", error=error)
 
         # Checking password
         password = request.form.get("password")
         if not password:
-            error = True
+            error = "Password cannot be empty"
             return render_template("register.html", error=error)
         confirmation = request.form.get("confirmation")
         if not confirmation:
-            error = True
+            error = "Confirmation password cannot be empty"
             return render_template("register.html", error=error)
         if password != confirmation:
-            error = True
+            error = "Passwords do not match"
             return render_template("register.html", error=error)
         password_hash = generate_password_hash(password)
         # Store in database
@@ -93,15 +95,15 @@ def login():
     if request.method == "POST":
         user_name = request.form.get("username")
         if not user_name:
-            error = True
+            error = "Username cannot be empty"
             return render_template("login.html", error=error)
         password = request.form.get("password")
         if not password:
-            error = True
+            error = "Password canno be empty"
             return render_template("login.html", error=error)
         rows = User.query.filter_by(username = user_name).first()
         if rows == None or not check_password_hash(rows.hash, password):
-            error = True
+            error = "Incorrect username or password"
             return render_template("login.html", error=error)
         session["user_id"] = rows.id
         return redirect("/")
@@ -115,9 +117,72 @@ def logout():
     session.clear()
     return redirect("/login")
 
+
+# Add an Item to the inventory
+@app.route("/add", methods=["GET", "POST"])
+@login_required
+def add():
+    error = None
+    if request.method == "GET":
+        types = Type.query.options(load_only(Type.id, Type.type)).all()
+        categories = Category.query.options(load_only(Category.id, Category.category)).all()
+        sub_categories = Sub_Category.query.options(load_only(Sub_Category.id, Sub_Category.sub_category)).all()
+        return render_template("add.html", types=types, categories=categories, sub_categories=sub_categories, error=error)
+    else:
+        error  = None
+        type_id = request.form.get('type_selection')
+        category_id = request.form.get('category_selector')
+        sub_category_id = request.form.get('sub_category_selector')
+        name = request.form.get("item_name")
+        quantity = request.form.get("item_quantity")
+        price = request.form.get("item_cost")
+        if not type_id:
+            error = "Type not selected"
+        elif not category_id:
+            error = "Category not selected"
+        elif not sub_category_id:
+            error = "Sub-Category not selected"
+        elif not name:
+            error = "Item's name not entered"
+        elif not quantity:
+            error = "Quantity not entered"
+        elif not price:
+            error = "Price not entered"
+        else:
+            product_to_add = Add_Product(name = name, quantity = quantity, price=price, sub_category_id=sub_category_id)
+            db.session.add(product_to_add)
+            if Inventory.query.filter_by(name = name).count() == 0:
+                product = Inventory(name = name, quantity = quantity, price = price, sub_category_id = sub_category_id, old = True)
+                db.session.add(product)
+                db.session.commit()
+            else:
+                old_data = Inventory.query.with_entities(Inventory.price, Inventory.quantity).filter_by(name = name).filter(Inventory.old == True).first()
+                old_price = old_data[0]
+                old_quantity = old_data[1]
+                if old_price != price:
+                    product = Inventory(name = name, quantity = quantity, price = price, sub_category_id = sub_category_id)
+                    db.session.add(product)
+                    db.session.commit()
+                else:
+                    old_data.old_price = (price + old_price)/2
+                    old_data.quantity  = quantity + old_quantity
+                    db.session.commit()
+            return redirect("/")
+        return redirect("/add")
+
+
+# Add sale log and remove item from Inventory
+@app.route("/sale", methods=["GET", "POST"])
+@login_required
+def sale():
+    if request.method == "GET":
+        return render_template("sale.html")
+    else:
+        redirect("/sale")
+
+
 # Error and exception handling
 def errorhandler(e):
-    """Handle error"""
     if not isinstance(e, HTTPException):
         e = InternalServerError()
     return render_template("apology.html", error_name=e.name, error_code=e.code)
