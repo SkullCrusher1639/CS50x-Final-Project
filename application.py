@@ -164,7 +164,6 @@ def add():
                     db.session.add(product)
                     db.session.commit()
                 else:
-                    old_data.old_price = (price + old_price)/2
                     old_data.quantity  = quantity + old_quantity
                     db.session.commit()
             return redirect("/")
