@@ -175,10 +175,44 @@ def add():
 @app.route("/sale", methods=["GET", "POST"])
 @login_required
 def sale():
+    error = None
     if request.method == "GET":
-        return render_template("sale.html")
+        products = Inventory.query.options(load_only(Inventory.name)).group_by(Inventory.name).all()
+        return render_template("sale.html", products=products, error=error)
     else:
-        redirect("/sale")
+        products = Inventory.query.options(load_only(Inventory.name)).group_by(Inventory.name).all()
+        name = request.form.get("selected_item")
+        quantity = int(request.form.get("item_quantity"))
+        price = int(request.form.get("item_sale"))
+        inventory_data = Inventory.query.filter_by(name = name).filter_by(old = True).first()
+        sold_product = Sale_Product(name = name, quantity = quantity, price = price, sub_category_id = inventory_data.sub_category_id)
+        db.session.add(sold_product)
+        inventory_data.quantity = inventory_data.quantity - quantity
+        db.session.commit()
+        return redirect("/")
+
+# Route for the ajax call used in sale.html
+@app.route("/quantity")
+@login_required
+def get_quantity():
+    name = request.args.get("q")
+    if name:
+        quantity_obj = Inventory.query.with_entities(Inventory.quantity).filter_by(name = name)
+        if quantity_obj.count() == 0:
+            return redirect("/sale")
+        else:
+            quantity_obj = quantity_obj.filter_by(old = True).first()
+            if quantity_obj is None or quantity_obj[0] == 0:
+                quantity_obj = Inventory.query.options(load_only(Inventory.quantity, Inventory.old)).filter_by(name = name).first()
+                quantity_obj.old = True
+                db.session.commit()
+                quantity = quantity_obj.quantity
+            else:
+                quantity = quantity_obj[0]
+    else:
+        quantity = 0
+    quantity_required = {"quantity" : quantity}
+    return jsonify(quantity_required)
 
 
 # Error and exception handling

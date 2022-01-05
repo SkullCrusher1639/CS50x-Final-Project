@@ -4,5 +4,36 @@
     Sales
 {% endblock %}
 
+{% block scripts %}
+    <script type="text/javascript" src="/static/sale.js"></script>
+{% endblock %}
+
 {% block main %}
+<div class="center">
+    <h2 class="mb-4">Sale Items</h2>
+    {% if error %}
+            <div class='bg-danger center text-white error'>{{ error }}</div>
+    {% endif %}
+    <form action="/sale" method="post">
+        <div class="form-group">
+            <select id = "name" name = "selected_item" class="form-control" required>
+                <option value = "" selected disabled>Select Item</option>
+                {% for product in products %}
+                <option value ="{{product.name}}" > {{ product.name|capitalize }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <input id = "quantity" name = "item_quantity" type="number" placeholder="Enter item quantity" autocomplete="off" class="form-control center" min="1" max="0" required>
+        </div> 
+        <div class="form-group">
+            <input name = "item_sale" type="number" placeholder="Enter sale price" autocomplete="off" class="form-control center" min="1" required>
+        </div> 
+        <div class="form-group">  
+            <input name = "submit" type="submit" value="Submit" class="btn btn-primary">
+        </div>
+            </form>
+        </div>
+    </form>
+</div>
 {% endblock %}
