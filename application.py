@@ -134,8 +134,8 @@ def add():
         category_id = request.form.get('category_selector')
         sub_category_id = request.form.get('sub_category_selector')
         name = request.form.get("item_name")
-        quantity = request.form.get("item_quantity")
-        price = request.form.get("item_cost")
+        quantity = int(request.form.get("item_quantity"))
+        price = int(request.form.get("item_cost"))
         if not type_id:
             error = "Type not selected"
         elif not category_id:
@@ -149,16 +149,17 @@ def add():
         elif not price:
             error = "Price not entered"
         else:
-            product_to_add = Add_Product(name = name, quantity = quantity, price=price, sub_category_id=sub_category_id)
-            db.session.add(product_to_add)
+            adding_product = Add_Product(name = name, quantity = quantity, price = price, sub_category_id = sub_category_id)
+            db.session.add(adding_product)
+            db.session.commit()
             if Inventory.query.filter_by(name = name).count() == 0:
                 product = Inventory(name = name, quantity = quantity, price = price, sub_category_id = sub_category_id, old = True)
                 db.session.add(product)
                 db.session.commit()
             else:
-                old_data = Inventory.query.with_entities(Inventory.price, Inventory.quantity).filter_by(name = name).filter(Inventory.old == True).first()
-                old_price = old_data[0]
-                old_quantity = old_data[1]
+                old_data = Inventory.query.options(load_only(Inventory.id, Inventory.quantity)).filter_by(name = name).filter(Inventory.old == True).first()
+                old_price = old_data.price
+                old_quantity = old_data.quantity
                 if old_price != price:
                     product = Inventory(name = name, quantity = quantity, price = price, sub_category_id = sub_category_id)
                     db.session.add(product)
