@@ -4,5 +4,40 @@
 {% endblock %}
 
 {% block main %}
-	
+
+<div class="center">
+    <h2 class="mb-4">Inventory</h2>
+	<div class="x-scroll">
+	<table class="center inventory_table ">
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>Quantity</th>
+				<th>Type</th>
+				<th>Category</th>
+				<th>Sub-Category</th>
+			</tr>
+		</thead>
+		<tbody>
+	{% for product in product_hierarchy %}
+		{% for product_quantity in product_quantites %}
+		{% if product[0] == product_quantity[0] %}
+			{% if product_quantity[1] > 5 %}
+				<tr class="t_row">
+			{% else %}
+				<tr class="restock_needed t_row">
+			{% endif %}
+				<td>{{ product[0]|capitalize }}</td>
+				<td>{{ product_quantity[1] }} </td>
+				<td>{{ product[1]|capitalize }}</td>
+				<td>{{ product[2]| capitalize }} </td>
+				<td>{{ product[3]| capitalize }} </td>
+			</tr>
+		{% endif %}	
+		{% endfor %}
+	{% endfor %}
+		</tbody>
+	</table>
+	</div>
+</div>
 {% endblock %}

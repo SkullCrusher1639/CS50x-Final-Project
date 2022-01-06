@@ -4,8 +4,9 @@ from flask_session import Session
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import generate_password_hash, check_password_hash
 from tempfile import mkdtemp
+from sqlalchemy import func
 from sqlalchemy.orm import load_only
-from database import db, User, Type, Category, Sub_Category, Add_Product, Sale_Product, Inventory
+from database import db, User, Type, Category, Sub_Category, Add_Product, Sale_Product, Inventory, sub_categories_link
 from sqlalchemy import text
 from helpers import login_required
 
@@ -37,22 +38,16 @@ def after_request(response):
     return response
 
 
+# Configuring jinja
+app.jinja_env.add_extension('jinja2.ext.do')
+
 # App routes
-# Main Dashboard with the current inventory
-@app.route("/", methods=["GET", "POST"])
-@login_required
-def index():
-    if request.method == "GET":
-        return render_template("index.html")
-    else:
-        return redirect("/")
 
 # Register new user/manager
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    error = None
     if request.method == "GET":
-        return render_template("register.html", error=error)
+        return render_template("register.html")
     else:
         # Checking username
         user_name = request.form.get("username")
@@ -111,11 +106,24 @@ def login():
         return render_template("login.html", error=error)
 
 
-# Logout a user and clear its session
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect("/login")
+# Main Dashboard with the current inventory
+@app.route("/")
+@login_required
+def index():
+    product_quantites = Inventory.query.with_entities(Inventory.name, func.sum(Inventory.quantity)) \
+                            .group_by(Inventory.name).all()
+    print(product_quantites)
+    product_hierarchy = db.session.query(Inventory.name, Type.type, Category.category, 
+                            Sub_Category.sub_category) \
+                            .select_from(Inventory)\
+                            .join(Sub_Category) \
+                            .join(sub_categories_link) \
+                            .join(Category) \
+                            .join(Type) \
+                            .distinct()\
+                            .group_by(Inventory.name).all() 
+    print(product_hierarchy)
+    return render_template("index.html", product_quantites=product_quantites, product_hierarchy=product_hierarchy)
 
 
 # Add an Item to the inventory
@@ -177,7 +185,7 @@ def add():
 def sale():
     error = None
     if request.method == "GET":
-        products = Inventory.query.options(load_only(Inventory.name)).group_by(Inventory.name).all()
+        products = Inventory.query.options(load_only(Inventory.name)).group_by(Inventory.name).filter(Inventory.quantity != 0).all()
         return render_template("sale.html", products=products, error=error)
     else:
         products = Inventory.query.options(load_only(Inventory.name)).group_by(Inventory.name).all()
@@ -213,6 +221,14 @@ def get_quantity():
         quantity = 0
     quantity_required = {"quantity" : quantity}
     return jsonify(quantity_required)
+
+
+# Logout a user and clear its session
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
+
 
 
 # Error and exception handling

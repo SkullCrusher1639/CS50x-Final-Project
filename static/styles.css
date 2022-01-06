@@ -70,3 +70,57 @@
     max-width: 50%;
     margin-bottom: 20px;
 }
+
+.inventory_table
+{
+    font-size: 20px;
+    padding: 0;
+    margin: 0 auto;
+    text-align: center;
+    width: 50pc;
+}
+
+.inventory_table th
+{
+    width: 20px;
+    font-family: Times;
+    font-size: 20px;
+    border: solid;
+    border-color:black;
+    border-width: 5px;
+}
+
+.inventory_table .t_row
+{
+    padding-bottom: 20px;
+}
+
+.inventory_table .t_row:hover
+{
+    background-color: #e0e0d1;
+    color: inherit;
+}
+
+.inventory_table td
+{
+    width: 20pc;
+    font-size: 18px;
+    font-family: calibri;
+}
+
+.inventory_table thead
+{
+    border: solid;
+    border-width: 5px;
+}
+
+.restock_needed
+{
+    background-color: #f03e3e;
+    color: white;
+}
+
+.x-scroll
+{
+    overflow-x: auto;
+}
