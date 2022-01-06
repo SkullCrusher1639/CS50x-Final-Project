@@ -42,8 +42,9 @@ class Sub_Category(db.Model):
     __tablename__ = "sub_categories"
     id = db.Column(db.Integer, primary_key = True)
     sub_category = db.Column(db.Integer, nullable = False)
+    inventory = db.relationship("Inventory", backref="sub_category")
     add_products = db.relationship("Add_Product", backref="sub_category")
-
+    sold_products = db.relationship("Sale_Product", backref="sub_category")
 
 
 # Parent class for Invenrtory and product Logs
@@ -60,8 +61,7 @@ class Product(AbstractConcreteBase, db.Model):
 class Add_Product(Product):
     __tablename__ = "added_products"  
     sub_category_id = db.Column(db.Integer,db.ForeignKey("sub_categories.id"))
-    
-    
+  
 # Child Class for the Products sold Table
 class Sale_Product(Product):
     __tablename__ = "sold_products"
@@ -72,3 +72,4 @@ class Inventory(Product):
     __tablename__ = "inventory"
     old = db.Column(db.Boolean, default=False, nullable = False)
     sub_category_id = db.Column(db.Integer,db.ForeignKey("sub_categories.id"))
+
