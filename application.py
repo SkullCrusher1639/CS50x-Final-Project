@@ -134,7 +134,7 @@ def add():
         return render_template("add.html", types=types)
     else:
         error  = None
-        type_id = request.form.get('type_selection')
+        type_id = request.form.get('type_selector')
         category_id = request.form.get('category_selector')
         sub_category_id = request.form.get('sub_category_selector')
         name = request.form.get("item_name")
