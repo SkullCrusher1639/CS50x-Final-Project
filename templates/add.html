@@ -4,6 +4,10 @@
     Add Items
 {% endblock %}
 
+{% block scripts %}
+    <script type="text/javascript" src="/static/add.js"></script>
+{% endblock %}
+
 {% block main %}
 <div class="center">
     <h2 class="mb-4">Add Elements</h2>
@@ -12,7 +16,7 @@
     {% endif %}
     <form action="/add" method="post">
         <div class="form-group">
-            <select name = "type_selection" class="form-control" required>
+            <select id = "type_selector" name="type_selector" class="form-control" required>
                 <option value = "" selected disabled>Type</option>
                 {% for type in types %}
                 <option value ="{{type.id}}" > {{type.type | capitalize }}</option>
@@ -20,19 +24,13 @@
             </select>
         </div>
         <div class="form-group">
-            <select name = "category_selector" class="form-control" required>
+            <select id = "category_selector" name = "category_selector" class="form-control" required>
                 <option value = "" selected disabled>Category</option>
-                {% for category in categories %}
-                <option value ="{{category.id}}" > {{category.category | capitalize }}</option>
-                {% endfor %}
             </select>
         </div>
         <div class="form-group">
-            <select name = "sub_category_selector" class="form-control" required>
+            <select id = "sub_category_selector" name = "sub_category_selector" class="form-control" required>
                 <option value = "" selected disabled>Sub-Category</option>
-                {% for sub_category in sub_categories %}
-                <option value ="{{sub_category.id}}" > {{sub_category.sub_category | capitalize }}</option>
-                {% endfor %}
             </select>
         </div>
         <div class="form-group">

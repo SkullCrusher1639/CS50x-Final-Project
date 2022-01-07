@@ -8,7 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import load_only
 from database import db, User, Type, Category, Sub_Category, Add_Product, Sale_Product, Inventory, sub_categories_link
 from sqlalchemy import text
-from helpers import login_required
+from helpers import login_required, tuple_to_dict
 
 # Creating and configuring flask app
 app = Flask(__name__)
@@ -112,7 +112,6 @@ def login():
 def index():
     product_quantites = Inventory.query.with_entities(Inventory.name, func.sum(Inventory.quantity)) \
                             .group_by(Inventory.name).all()
-    print(product_quantites)
     product_hierarchy = db.session.query(Inventory.name, Type.type, Category.category, 
                             Sub_Category.sub_category) \
                             .select_from(Inventory)\
@@ -122,7 +121,6 @@ def index():
                             .join(Type) \
                             .distinct()\
                             .group_by(Inventory.name).all() 
-    print(product_hierarchy)
     return render_template("index.html", product_quantites=product_quantites, product_hierarchy=product_hierarchy)
 
 
@@ -133,9 +131,7 @@ def add():
     error = None
     if request.method == "GET":
         types = Type.query.options(load_only(Type.id, Type.type)).all()
-        categories = Category.query.options(load_only(Category.id, Category.category)).all()
-        sub_categories = Sub_Category.query.options(load_only(Sub_Category.id, Sub_Category.sub_category)).all()
-        return render_template("add.html", types=types, categories=categories, sub_categories=sub_categories, error=error)
+        return render_template("add.html", types=types)
     else:
         error  = None
         type_id = request.form.get('type_selection')
@@ -177,6 +173,27 @@ def add():
                     db.session.commit()
             return redirect("/")
         return redirect("/add")
+
+# Routes for the ajaz call by add.html
+@app.route("/type")
+@login_required
+def get_categories():
+    type = int(request.args.get("q"))
+    categories = Category.query.with_entities(Category.id, Category.category).join(Type) \
+                      .filter(Type.id == type).all()
+    categories = tuple_to_dict(categories, "id", "category")
+    return jsonify(categories)
+
+@app.route("/cat")
+@login_required
+def get_sub_categories():
+    cat_id = int(request.args.get("q"))
+    sub_categories = Sub_Category.query.with_entities(Sub_Category.id, Sub_Category.sub_category).\
+                        join(sub_categories_link).\
+                        join(Category) \
+                      .filter(Category.id == cat_id).all()
+    sub_categories = tuple_to_dict(sub_categories, "id", "sub_category")
+    return jsonify(sub_categories)
 
 
 # Add sale log and remove item from Inventory
