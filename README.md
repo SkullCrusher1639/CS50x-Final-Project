@@ -11,7 +11,7 @@ For storing data of the inventory, I have used a SQLite database(more on that in
 
 Demo Video using this application is uploaded on YouTube.
 
-**Link:** [TODO](https://youtube.com)
+**Link:** [Demo Video](https://youtu.be/ApY8idZiVVQ)
 
 ## Description
 
