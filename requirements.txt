@@ -2,5 +2,5 @@ Flask
 Flask-Session
 Flask_SQLAlchemy
 Werkzeug
-requests
 SQLAlchemy
+datetime
