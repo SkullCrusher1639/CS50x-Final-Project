@@ -8,8 +8,15 @@
     <div class="center">
         <h2 class="mb-4">Login</h2>
         {% if error %}
-            <div class='bg-danger center text-white error'>{{ error }}</div>
+            <div class='bg-danger center text-white error form-control'>{{ error }}</div>
         {% endif %}
+        {% with messages= get_flashed_messages %}
+            {% if message %}
+                {% for message in messages %}
+                <div class='bg-success center text-white error form-control'>{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         <form action="/login" method="post">
             <div class="form-group">
                 <input autocomplete="off" autofocus class="form-control center" name="username" placeholder="Username" type="text" required>

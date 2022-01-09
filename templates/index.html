@@ -7,6 +7,13 @@
 
 <div class="center">
     <h2 class="mb-4">Inventory</h2>
+	{% with messages = get_flashed_messages() %}
+		{% if messages %}
+			{% for message in messages %}
+			<div class='bg-success center text-white form-control  error'>{{ message }}</div>
+			{% endfor %}
+		{% endif %}
+	{% endwith %}
 	<div class="x-scroll">
 	<table class="center inventory_table ">
 		<thead>
