@@ -1,5 +1,6 @@
 .center
 {
+    width: fit;
     margin-left: auto;
     margin-right: auto;
     text-align: center;
@@ -75,7 +76,7 @@
 {
     font-size: 20px;
     padding: 0;
-    margin: 0 auto;
+    margin: 20px auto;
     text-align: center;
     width: 50pc;
 }
@@ -123,4 +124,14 @@
 .x-scroll
 {
     overflow-x: auto;
+}
+
+.y-scroll
+{
+    overflow-y: auto;
+}
+
+.input-group
+{
+    width: 30%;
 }

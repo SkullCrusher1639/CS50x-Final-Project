@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Reports
+{% endblock %}
+
+{% block scripts%}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+	<script type="text/javascript" src="/static/report.js"></script>
+	<script src="https://cdn.plot.ly/plotly-2.8.3.min.js"></script>
+{% endblock %}
+
+{% block main %}
+<div class="center">
+    <h2 class="mb-4">Reports</h2>
+	<!-- Selection Buttons -->
+	<div class="input-group mb-3 center">
+		<div>
+		  <label class="input-group-text" for="inputGroupSelect01" id="addon-wrapping">View: </label>
+		</div>
+		<select class="custom-select" id="selection">
+		  <option value="table" selected>History</option>
+		  <option value="chart">Charts</option>
+		</select>
+	  </div>
+	<!-- Log Table -->
+	<div id = "report_table" class="x-scroll y-scroll">
+	<table class="center inventory_table ">
+		<thead>
+			<th>Status</th>
+			<th>Name</th>
+			<th>Price</th>
+			<th>Quantity</th>
+			<th>Date</th>
+		</thead>
+		<tbody>
+            {% for log in logs %}
+				<tr class="t_row">
+					{% if log[2] < 0 %}
+						<td>Sale</td>
+					{% elif log[2] > 0 %}
+						<td>Buy</td>
+					{% endif %}
+					<td>{{ log[0] }}</td>
+					<td>{{ log[1] }}</td>
+					{% if log[2] < 0 %}
+					<td>{{ log[2] * -1 }}</td>
+					{% else %}
+					<td> {{ log[2] }} </td>
+					{% endif %}
+					<td>{{ log[3] }}</td>
+				</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+	</div>
+
+	<!-- Monthly Chart -->
+	<div id="report_chart" class="center">
+		<canvas id="add_chart" style="max-width:400px; display:inline; margin-right: 10px"></canvas>
+		<canvas id="sale_chart" style="max-width:400px; display:inline; margin-left: 10px"></canvas>
+		<canvas id="net_chart" style="max-width:400px; display:inline;"></canvas>
+	</div>
+</div>
+{% endblock %}

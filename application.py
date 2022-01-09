@@ -6,12 +6,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from tempfile import mkdtemp
 from sqlalchemy import func
 from sqlalchemy.orm import load_only
+from sqlalchemy.sql import extract
 from database import db, User, Type, Category, Sub_Category, Add_Product, Sale_Product, Inventory, sub_categories_link
-from sqlalchemy import text
 from helpers import login_required, tuple_to_dict
 
 # Creating and configuring flask app
 app = Flask(__name__)
+app.secret_key = "hammad"
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # Confirguring Database setting
@@ -76,6 +77,7 @@ def register():
         new_user = User(username = user_name, hash = password_hash)
         db.session.add(new_user)
         db.session.commit()
+        flash("Successfully Registered. You can now log in using your credentials")
         return redirect("/login")
 
 
@@ -101,6 +103,7 @@ def login():
             error = "Incorrect username or password"
             return render_template("login.html", error=error)
         session["user_id"] = rows.id
+        flash("Successfully Logged In")
         return redirect("/")
     else:
         return render_template("login.html", error=error)
@@ -171,28 +174,38 @@ def add():
                 else:
                     old_data.quantity  = quantity + old_quantity
                     db.session.commit()
+            flash("Item Added to Inventory")
             return redirect("/")
-        return redirect("/add")
+        types = Type.query.options(load_only(Type.id, Type.type)).all()
+        return render_template("add.html", error=error)
 
 # Routes for the ajaz call by add.html
 @app.route("/type")
 @login_required
 def get_categories():
     type = int(request.args.get("q"))
-    categories = Category.query.with_entities(Category.id, Category.category).join(Type) \
-                      .filter(Type.id == type).all()
-    categories = tuple_to_dict(categories, "id", "category")
+    if type:
+        categories = Category.query.with_entities(Category.id, Category.category).join(Type) \
+                        .filter(Type.id == type).all()
+        if categories != None:
+            categories = tuple_to_dict(categories, "id", "category")
+    else:
+        categories = []
     return jsonify(categories)
 
 @app.route("/cat")
 @login_required
 def get_sub_categories():
     cat_id = int(request.args.get("q"))
-    sub_categories = Sub_Category.query.with_entities(Sub_Category.id, Sub_Category.sub_category).\
-                        join(sub_categories_link).\
-                        join(Category) \
-                      .filter(Category.id == cat_id).all()
-    sub_categories = tuple_to_dict(sub_categories, "id", "sub_category")
+    if cat_id:
+        sub_categories = Sub_Category.query.with_entities(Sub_Category.id, Sub_Category.sub_category).\
+                            join(sub_categories_link).\
+                            join(Category) \
+                        .filter(Category.id == cat_id).all()
+        if sub_categories != None:
+            sub_categories = tuple_to_dict(sub_categories, "id", "sub_category")
+    else:
+        sub_categories = []
     return jsonify(sub_categories)
 
 
@@ -207,14 +220,26 @@ def sale():
     else:
         products = Inventory.query.options(load_only(Inventory.name)).group_by(Inventory.name).all()
         name = request.form.get("selected_item")
-        quantity = int(request.form.get("item_quantity"))
-        price = int(request.form.get("item_sale"))
-        inventory_data = Inventory.query.filter_by(name = name).filter_by(old = True).first()
-        sold_product = Sale_Product(name = name, quantity = quantity, price = price, sub_category_id = inventory_data.sub_category_id)
-        db.session.add(sold_product)
-        inventory_data.quantity = inventory_data.quantity - quantity
-        db.session.commit()
-        return redirect("/")
+        quantity = request.form.get("item_quantity")
+        price = request.form.get("item_sale")
+        if not name:
+            error = "Item name not selected"
+        elif not quantity:
+            error = "Quantity not specified"
+            quantity = int(quantity)
+        elif not price:
+            error = "Price not specified"
+            price = int(price)    
+        else:
+            inventory_data = Inventory.query.filter_by(name = name).filter_by(old = True).first()
+            sold_product = Sale_Product(name = name, quantity = quantity, price = price, sub_category_id = inventory_data.sub_category_id)
+            db.session.add(sold_product)
+            inventory_data.quantity = inventory_data.quantity - int(quantity)
+            db.session.commit()
+            flash("Item sold")
+            return redirect("/")
+        products = Inventory.query.options(load_only(Inventory.name)).group_by(Inventory.name).filter(Inventory.quantity != 0).all() 
+        return render_template("sale.html", products=products, error=error)
 
 # Route for the ajax call used in sale.html
 @app.route("/quantity")
@@ -239,6 +264,40 @@ def get_quantity():
     quantity_required = {"quantity" : quantity}
     return jsonify(quantity_required)
 
+
+# Route for the reports page
+@app.route("/reports")
+@login_required
+def reports():
+    added_product_log = Add_Product.query.with_entities(Add_Product.name, Add_Product.price, 
+                            Add_Product.quantity, Add_Product.date)
+    sold_product_log = Sale_Product.query.with_entities(Sale_Product.name, Sale_Product.price, 
+                            (Sale_Product.quantity) * -1, Sale_Product.date)
+    complete_log = (sold_product_log.union_all(added_product_log)).order_by(Add_Product.date) \
+                        .order_by(Add_Product.price).all()
+    return render_template("report.html", logs=complete_log)
+
+# Route for the ajax call to get monthly data
+@app.route("/months")
+def get_monthly_data():
+    months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+    monthly_data = []
+    for i in range(12):
+        data_sale = db.session.query(func.sum(Sale_Product.price * Sale_Product.quantity)).\
+            filter(extract("month", Sale_Product.date) == (i + 1)).first()
+        data_add = db.session.query(func.sum(Add_Product.price * Add_Product.quantity)). \
+            filter(extract("month", Add_Product.date) == (i + 1)).first()
+        if data_sale[0]:
+            data_month_sale = data_sale[0]
+        else:
+            data_month_sale = 0
+        if data_add[0]:
+            data_month_add = data_add[0]
+        else:
+            data_month_add = 0
+        monthly_data.append({"month" : months[i], "sale": data_month_sale , "add": data_month_add,
+                                 "net": data_month_sale - data_month_add})
+    return jsonify(monthly_data)
 
 # Logout a user and clear its session
 @app.route("/logout")
